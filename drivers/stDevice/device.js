@@ -13,6 +13,22 @@ class STDevice extends Homey.Device {
 			this.registerCapabilityListener('onoff', this.onCapabilityOnoff.bind(this));
 		}
 
+		if (this.hasCapability('volume_down')) {
+			this.registerCapabilityListener('volume_down', this.onCapabilityVolumeDown.bind(this));
+		}
+
+		if (this.hasCapability('volume_up')) {
+			this.registerCapabilityListener('volume_up', this.onCapabilityVolumeUp.bind(this));
+		}
+
+		if (this.hasCapability('channel_down')) {
+			this.registerCapabilityListener('channel_down', this.onCapabilityChannelDown.bind(this));
+		}
+
+		if (this.hasCapability('channel_up')) {
+			this.registerCapabilityListener('channel_up', this.onCapabilityChannelUp.bind(this));
+		}
+
 		if (this.hasCapability('dim')) {
 			this.registerCapabilityListener('dim', this.onCapabilityDim.bind(this));
 		}
@@ -32,6 +48,8 @@ class STDevice extends Homey.Device {
 		// Try to select the best class based on the capabilities that have been found
 		if (this.hasCapability('dim')) {
 			this.setClass('light');
+		} else if (this.hasCapability('channel_up')) {
+			this.setClass('tv');
 		} else if (this.hasCapability('onoff')) {
 			this.setClass('socket');
 		} else if (this.hasCapability('contactSensor')) {
@@ -202,6 +220,46 @@ class STDevice extends Homey.Device {
 			Homey.app.updateLog(this.getName() + " onCapabilityOnoff Error " + JSON.stringify(err));
 		}
 	}
+
+	onCapabilityVolumeDown(value, opts) {
+		Homey.app.setCapabilityValue(this.getData().id, {
+			"commands": [{
+				"component": "main",
+				"capability": "audioVolume",
+				"command": "volumeDown"
+			}]
+		});
+	};
+
+	onCapabilityVolumeUp(value, opts) {
+		Homey.app.setCapabilityValue(this.getData().id, {
+			"commands": [{
+				"component": "main",
+				"capability": "audioVolume",
+				"command": "volumeUp"
+			}]
+		});
+	};
+
+	onCapabilityChannelDown(value, opts) {
+		Homey.app.setCapabilityValue(this.getData().id, {
+			"commands": [{
+				"component": "main",
+				"capability": "tvChannel",
+				"command": "channelDown"
+			}]
+		});
+	};
+
+	onCapabilityChannelUp(value, opts) {
+		Homey.app.setCapabilityValue(this.getData().id, {
+			"commands": [{
+				"component": "main",
+				"capability": "tvChannel",
+				"command": "channelUp"
+			}]
+		});
+	};
 
 	// this method is called when the Homey device has requested a dim level change ( 0 to 1)
 	async onCapabilityDim(value, opts) {

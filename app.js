@@ -12,6 +12,14 @@ const CapabilityMap = [{
 		capabilities: ["dim"]
 	},
 	{
+		id: "audioVolume",
+		capabilities: ["volume_down", "volume_up"]
+	},
+	{
+		id: "tvChannel",
+		capabilities: ["channel_down", "channel_up"]
+	},
+	{
 		id: "contactSensor",
 		capabilities: ["alarm_contact"]
 	},
