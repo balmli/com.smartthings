@@ -3,71 +3,64 @@ const Homey = require('homey');
 const https = require("https");
 const POLL_INTERVAL = 3000;
 
-const CapabilityMap = [{
-		id: "switch",
-		capabilities: ["onoff"]
+const CapabilityMap2 = {
+	"switch": {
+		capabilities: ["onoff"],
+		icon: "socket.svg"
 	},
-	{
-		id: "switchLevel",
-		capabilities: ["dim"]
+	"switchLevel": {
+		capabilities: ["dim"],
+		icon: "light.svg"
 	},
-	{
-		id: "audioVolume",
-		capabilities: ["volume_down", "volume_up"]
+	"contactSensor": {
+		capabilities: ["alarm_contact"],
+		icon: "door.svg"
 	},
-	{
-		id: "tvChannel",
-		capabilities: ["channel_down", "channel_up"]
+	"battery": {
+		capabilities: ["measure_battery"],
+		icon: ""
 	},
-	{
-		id: "contactSensor",
-		capabilities: ["alarm_contact"]
+	"presenceSensor": {
+		capabilities: ["alarm_presence"],
+		icon: "presence.svg"
 	},
-	{
-		id: "battery",
-		capabilities: ["measure_battery"]
+	"powerConsumptionReport": {
+		capabilities: ["measure_power", "meter_power", "meter_power.delta"],
+		icon: ""
 	},
-	{
-		id: "presenceSensor",
-		capabilities: ["alarm_presence"]
+	"remoteControlStatus": {
+		capabilities: ["remote_status"],
+		icon: ""
 	},
-	{
-		id: "powerConsumptionReport",
-		capabilities: ["measure_power", "meter_power"]
+	"washerOperatingState": {
+		capabilities: ["washer_mode", "washer_job_status", "completion_time"],
+		icon: ""
 	},
-	{
-		id: "remoteControlStatus",
-		capabilities: ["remote_status"]
+	"custom.washerWaterTemperature": {
+		capabilities: ["water_temperature"],
+		icon: ""
 	},
-	{
-		id: "washerOperatingState",
-		capabilities: ["washer_mode", "washer_job_status", "completion_time"]
+	"custom.washerSpinLevel": {
+		capabilities: ["spin_level"],
+		icon: ""
 	},
-	{
-		id: "custom.washerWaterTemperature",
-		capabilities: ["measure_temperature"]
+	"custom.washerRinseCycles": {
+		capabilities: ["rinse_cycles"],
+		icon: ""
 	},
-	{
-		id: "custom.washerAddwashAlarm",
-		capabilities: ["alarm_addWash"]
+	"washerMode": {
+		capabilities: ["washer_status"],
+		icon: "washingmachine.svg"
 	},
-	{
-		id: "custom.washerSpinLevel",
-		capabilities: ["measure_spin_level"]
+	"audioVolume": {
+		capabilities: ["volume_down", "volume_up"],
+		icon: ""
 	},
-	{
-		id: "custom.washerSoilLevel",
-		capabilities: ["measure_soil_level"]
+	"tvChannel": {
+		capabilities: ["channel_down", "channel_up"],
+		icon: ""
 	},
-	{
-		id: "custom.washerRinseCycles",
-		capabilities: ["measure_rinse_cycles"]
-	},
-	{
-		id: "washerMode",
-		capabilities: ["washer_status"]
-	}
-]
+};
 
 class MyApp extends Homey.App {
 
@@ -128,16 +121,24 @@ class MyApp extends Homey.App {
 					"id": device['deviceId'],
 				};
 
+				var iconName = "";
 				var components = device['components'];
 				var mainComponent = components[0];
 				// Find supported capabilities
 				var deviceCapabilities = mainComponent['capabilities'];
 				var capabilities = [];
+
 				for (const deviceCapability of deviceCapabilities) {
-					const capabilityEntry = CapabilityMap.find(x => x.id === deviceCapability['id']);
-					if (capabilityEntry != null) {
+
+					const capabilityMapEntry = CapabilityMap2[deviceCapability['id']];
+					if (capabilityMapEntry != null) {
 						//Add to the table
-						capabilityEntry.capabilities.forEach(element => {
+						Homey.app.updateLog(capabilityMapEntry);
+						if (capabilityMapEntry.icon)
+						{
+							iconName = capabilityMapEntry.icon;
+						}
+						capabilityMapEntry.capabilities.forEach(element => {
 							capabilities.push(element);
 						});
 					}
@@ -146,6 +147,7 @@ class MyApp extends Homey.App {
 					// Add this device to the table
 					devices.push({
 						"name": device['label'],
+						"icon": iconName, // relative to: /drivers/<driver_id>/assets/
 						"capabilities": capabilities,
 						data
 					})
@@ -162,7 +164,7 @@ class MyApp extends Homey.App {
 		}
 	}
 
-	async getCapabilityValue(DeviceID, CapabilityID) {
+	async getDeviceCapabilityValue(DeviceID, CapabilityID) {
 		//https://api.smartthings.com/v1/devices/{deviceId}/components/{componentId}/capabilities/{capabilityId}/status
 		let url = "devices/" + DeviceID + "/components/main/capabilities/" + CapabilityID + "/status";
 		let result = await this.GetURL(url);
@@ -175,7 +177,7 @@ class MyApp extends Homey.App {
 		return -1;
 	}
 
-	async setCapabilityValue(DeviceID, Commands) {
+	async setDeviceCapabilityValue(DeviceID, Commands) {
 		//https://api.smartthings.com/v1/devices/{deviceId}/commands
 		let url = "devices/" + DeviceID + "/commands";
 		let result = await this.PostURL(url, Commands);
@@ -208,17 +210,13 @@ class MyApp extends Homey.App {
 					},
 				}
 
-				Homey.app.updateLog(https_options);
-
 				https.get(https_options, (res) => {
 					if (res.statusCode === 200) {
 						let body = [];
 						res.on('data', (chunk) => {
-							Homey.app.updateLog("retrieve data");
 							body.push(chunk);
 						});
 						res.on('end', () => {
-							Homey.app.updateLog("Done retrieval of data");
 							resolve({
 								"body": Buffer.concat(body)
 							});
